@@ -7,7 +7,9 @@ import * as firebase from 'firebase';
 import * as ImagePicker from 'expo-image-picker';
 import SelectImage from './SelectImage';
 import Ingredient from './Ingredient';
-
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import FridgePage from './FridgePage';
 
 if(!firebase.apps.length)
 {
@@ -17,6 +19,9 @@ else
 {
   firebase.app();
 }
+
+
+const Stack = createStackNavigator();
 
 
 class App extends React.Component
@@ -84,9 +89,12 @@ class App extends React.Component
       return (<Text>{ingredient.name}</Text>)
     })
     return (
-      <View style={styles.container}>
-        <Ingredient name = "tomatooooo" image = {require('./tomates.jpg')} />
-      </View>
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen name="Mon Frigo" component= {FridgePage}/>
+        </Stack.Navigator>
+      </NavigationContainer>
+     
     );
   }
 }
