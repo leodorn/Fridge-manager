@@ -1,23 +1,18 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import {  Text, View,Image,Button, Alert } from 'react-native';
-import firebaseConfig from './config'
-import styles from './styles'
-import * as firebase from 'firebase';
-import * as ImagePicker from 'expo-image-picker';
 
-import SelectImage from './SelectImage';
-import Ingredient from './Ingredient';
+import React from 'react';
+import firebaseConfig from './config'
+import * as firebase from 'firebase';
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import FridgePage from './FridgePage';
-import AddIngredient from './AddIngredient'
+import AddIngredient from './component/AddIngredient'
 import { useFonts, Glegoo_400Regular } from '@expo-google-fonts/glegoo';
 import AppLoading from 'expo-app-loading'
-import IngredientList from './IngredientList'
-import PickIngredient from './PickIngredient'
-import TestAsyncStorage from './TestAsyncStorage'
-import Fridge from './Fridge'
+import IngredientList from './component/IngredientList'
+import PickIngredient from './component/PickIngredient'
+import Fridge from './component/Fridge'
+import ChooseIngredient from './component/ChooseIngredient'
+import DatePicker from './component/DatePicker'
 
 if(!firebase.apps.length)
 {
@@ -51,19 +46,13 @@ export default function App() {
           <Stack.Screen name="AddIngredient" component= {AddIngredient} options={{ title: 'Ajouter un ingredient' }}/>
           <Stack.Screen name="IngredientList" component= {IngredientList} options={{ title: 'Mon Frigo' }}/>
           <Stack.Screen name="PickIngredient" component= {PickIngredient} options={{ title: 'Choisir cet ingrédient' }}/>
-          <Stack.Screen name="Test" component= {TestAsyncStorage} options={{ title: 'Test' }}/>
           <Stack.Screen name="Fridge" component= {Fridge} options={{ title: 'Mon Frigo' }}/>
+          <Stack.Screen name="ChooseIngredient" component= {ChooseIngredient} options={{ title: 'Ajouter' }}/>
+          <Stack.Screen name="DatePicker" component= {DatePicker} options={{ title: 'Ajouter' }}/>
        </Stack.Navigator>
       </NavigationContainer>
   );
 }
-  /*state = {
-    ingredients : [],
-    urlImage : null,
-    textChanging : 'Bonjour à tous ! ',
-    imagePick : '',
-    selectedImage :  ''
-  }*/
 
   
   

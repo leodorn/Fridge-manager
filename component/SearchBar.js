@@ -1,7 +1,7 @@
 import React from 'react'
 import {View,Text,TextInput,StyleSheet,Image} from 'react-native'
 import * as firebase from 'firebase'
-import firebaseConfig from './config'
+import firebaseConfig from '../config'
 
 if(!firebase.apps.length)
 {
@@ -20,8 +20,7 @@ export default class SearchBar extends React.Component{
         value : undefined,
         defaultValue : "Ingrédient à ajouter...",
         proposition : [],
-        ingredients : [
-        ]
+        ingredients : []
     }
 
     handleChangeText = (text) =>{

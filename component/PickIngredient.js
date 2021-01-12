@@ -1,6 +1,7 @@
 import React from 'react'
-import {View,TextInput,StyleSheet,Image,Button,TouchableOpacity,Text,Alert} from 'react-native'
+import {View,StyleSheet,TouchableOpacity,Text,Image} from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import UtilsAsyncStorage from '../Utils/UtilsAsyncStorage';
 
 
 
@@ -19,37 +20,29 @@ export default class PickIngredient extends React.Component{
 
 
     componentDidMount(){
-        console.log("coucou je suis " + this.props.ingredient.name)
+        
         if(this.props.ingredient.unitAverage != 0){
-            this.setState({
-                unit : true,
+            this.setState({unit : true},() => {
+            
+            })
+        }else if(this.props.ingredient.gramAverage != 0){
+            this.setState({unit : false},() => {
             })
         }
-        else if(this.props.ingredient.gramAverage != 0){
-            this.setState({
-                unit : false,
-            })
-        }
+        
     }
 
     handleAddUnit = () =>{
         if(this.state.unit){
-            if(this.state.unitNumber<999)
-            {
-                
+            if(this.state.unitNumber<999){           
                 let unitNumber = parseInt(this.state.unitNumber) +1
-                    this.setState({
-                    unitNumber :  unitNumber
-                })
+                this.setState({unitNumber})
             }
         }else{
             if(this.state.gramNumber<100000)
             {
-                
                 let gramNumber = parseInt(this.state.gramNumber) +1
-                    this.setState({
-                    gramNumber :  gramNumber
-                })
+                    this.setState({gramNumber })
             }
         }
         
@@ -58,20 +51,14 @@ export default class PickIngredient extends React.Component{
 
     handleRemoveUnit = () =>{
         if(this.state.unit){
-            if(this.state.unitNumber>0)
-            {
+            if(this.state.unitNumber>0){
                 let unitNumber = parseInt(this.state.unitNumber) -1
-                    this.setState({
-                    unitNumber :  unitNumber
-                })
+                    this.setState({ unitNumber })
             }
         }else{
-            if(this.state.gramNumber>0)
-            {
+            if(this.state.gramNumber>0){
                 let gramNumber = parseInt(this.state.gramNumber) -1
-                    this.setState({
-                    gramNumber :  gramNumber
-                })
+                this.setState({gramNumber})
             }
         }
         
@@ -79,22 +66,19 @@ export default class PickIngredient extends React.Component{
     }
 
     handleTimerRemove = (launch) =>{
-        let time
-        if(this.state.unit)
-        {
+        let time 
+        if(this.state.unit){
             time = 150;
         }else{
             time = 10;
         }
-        if(launch)
-        {
+        if(launch){
             this.handleRemoveUnit();
             this.state.intervale = setInterval(() => { 
                 this.handleRemoveUnit();
             }, time ); 
         }
-        else
-        {
+        else{
             clearInterval(this.state.intervale)
         }
         
@@ -102,76 +86,57 @@ export default class PickIngredient extends React.Component{
 
     handleTimerAdd= (launch) =>{
         let time
-        if(this.state.unit)
-        {
+        if(this.state.unit){
             time = 150;
         }else{
             time = 10;
         }
-        if(launch)
-        {
+        if(launch){
             this.handleAddUnit();
             this.state.intervale = setInterval(() => { 
                 this.handleAddUnit();
             }, time ); 
-        }
-        else
-        {
-            clearInterval(this.state.intervale)
-             
+        }else{
+            clearInterval(this.state.intervale)      
         }
         
     }
-
-    storeObject = async (key,value) => {
-        
-        try {
-          const jsonValue = JSON.stringify(value)
-          await AsyncStorage.setItem(key, jsonValue)
-          this.getObject(0)
-        } catch (e) {
-          // saving error
-        }
-      }
-    getObject = async (key) => {
-        try {
-          let jsonValue = await AsyncStorage.getItem(key)
-          jsonValue = JSON.parse(jsonValue)
-          console.log(jsonValue)
-          this.setState({
-              ingredientsStock : jsonValue
-          })
-        } catch(e) {
-          console.error(e)
-        }
-      }
 
 
     add = async () =>{
         //Récuperer liste déjà présente.
-        let ingredientStock = []        
-        await this.getObject(0);
-        ingredientStock = this.state.ingredientsStock;
-        console.log(ingredientStock)
+        let ingredientsStock = []        
+        let json =  UtilsAsyncStorage.getJsonObject("fridge");
+        this.setState({ingredientsStock : json})
+        let unitNumber = parseInt(this.state.unitNumber)
+        let gramNumber = parseInt(this.state.gramNumber)
+        ingredientsStock = this.state.ingredientsStock
         let ingredientToAdd = {
-            name : this.state.name,
-            image : this.state.image,
-            unitNumber : this.state.unitNumber,
-            gramNumber : this.state.gramNumber,
+            name : this.props.ingredient.name,
+            image : this.props.ingredient.image,
+            unitNumber : unitNumber,
+            gramNumber : gramNumber
+        };
+        if(this.state.ingredientsStock != null && this.state.ingredientsStock != undefined){
+            let result = this.state.ingredientsStock.find(element => element.name == ingredientToAdd.name)
+            if(result != undefined){
+                if(result.unitNumber != 0){
+                    ingredientToAdd.unitNumber = ingredientToAdd.unitNumber + result.unitNumber
+                }else{
+                    ingredientToAdd.gramNumber = ingredientToAdd.gramNumber + result.gramNumber
+                }
+            }
         }
-        
-       
         //Ajouter l'item à la liste
-        ingredientStock.push(ingredientToAdd)
+        ingredientsStock.push(ingredientToAdd)
         //push la liste
         this.setState({
-            ingredientStock : ingredientStock,
+            ingredientsStock : ingredientsStock,
             unitNumber : 0,
             gramNumber : 0,
         })
-        this.storeObject(0,this.state.ingredientsStock)        
+        UtilsAsyncStorage.saveObject("fridge",this.state.ingredientsStock)     
     }
-
 
     render() {
 
@@ -203,6 +168,8 @@ export default class PickIngredient extends React.Component{
         return(
                 
                     <View style = {{flexDirection : 'row'}}>
+                        <Text>{this.state.name}</Text>
+                        <Image style = {{width : 50,height : 50}} source = {{uri : this.state.image}}></Image>
                         <TouchableOpacity  onPressIn = {() => this.handleTimerRemove(true)} onPressOut = {() => this.handleTimerRemove(false)}>
                             <View style = {styles.buttonMoreAndLessStyle}>
                                 <Text style = {styles.moreAndLessStyle}>-</Text>
@@ -233,23 +200,23 @@ const styles = StyleSheet.create({
         height : 150,
         width : 150,
         borderRadius : 80,
-        marginTop : 10,
+        marginVertical : 10,
     },
     textStyle : {
         fontFamily: "Glegoo_400Regular",
-        fontSize : 15
+        fontSize : 15,
+        marginHorizontal : 2,
     },
     moreAndLessStyle : {
         fontFamily: "Glegoo_400Regular",
-        fontSize : 20,
     },
     buttonMoreAndLessStyle  : {
         backgroundColor : '#EDF4EE',
         borderWidth : 1,
         borderColor : 'black',
-        width : 80,
-        height : 80,
-        marginHorizontal: 30,
+        width : 30,
+        height : 30,
+        marginLeft : 5,
         alignItems: "center",
         justifyContent : "center",
         borderRadius : 80

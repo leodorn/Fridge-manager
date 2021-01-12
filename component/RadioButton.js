@@ -1,16 +1,14 @@
 import React from 'react'
-import {View,TextInput,StyleSheet,Image,Button,TouchableOpacity,Text,Alert} from 'react-native'
-
+import {View,StyleSheet,TouchableOpacity} from 'react-native'
+import styles from "../Styles/styles"
 export default class RadioButton extends React.Component {
-
-
     state = {
         checked : this.props.statusOfChecked,
     }
 
      handleOnClick = () =>{
+         //Pour ajouter une function quand on clique dessus
          if(this.props.onClick != undefined){
-            console.log("coucou")
             this.props.onClick()
          }
          if(this.props.statusOfChecked != undefined){
@@ -44,14 +42,9 @@ export default class RadioButton extends React.Component {
     {
         const radioButton = () =>{
             if(this.props.statusOfChecked){
-                return(
-                    <View style = {styles.checked}></View>
-                )
-            }
-            else{
-                return(
-                    <View style = {styles.notChecked}></View>
-                )
+                return(<View style = {styles.checked}></View>)       
+            }else{
+                return (<View style = {styles.notChecked}></View>)
             }
         }
         return (

@@ -1,25 +1,14 @@
 import React from 'react'
-import {View,TextInput,StyleSheet,Image,Button,TouchableOpacity,Text,Alert} from 'react-native'
-import * as firebase from 'firebase'
-import firebaseConfig from './config'
-import * as ImagePicker from 'expo-image-picker';
-import { createNavigatorFactory } from '@react-navigation/native';
+import {View,TextInput,StyleSheet,Image,TouchableOpacity,Text,Alert,ScrollView} from 'react-native'
 import RadioButton from './RadioButton'
-import { Dimensions } from 'react-native';
-if(!firebase.apps.length)
-{
-  firebase.initializeApp(firebaseConfig);
-}
-else
-{
-  firebase.app();
-}
-
+import Utils from '../Utils/Utils'
+import UtilsFirebase from '../Utils/UtilsFirebase'
+import stylesText from "../Styles/stylesText"
 export default class AddIngredient extends React.Component{
 
 
     state = {
-        image : require('./uploadyourimage.png'),
+        image : require('../uploadyourimage.png'),
         textInInput : undefined,
         canSubmit : false,
         count : 0,
@@ -34,222 +23,129 @@ export default class AddIngredient extends React.Component{
         valueGramme : undefined,
     }
 
-    getIngredient = (textInInput) => {
-        let count = 0;
-        let ref = firebase.database().ref("ingredients")
-         ref.orderByChild("name").equalTo(textInInput).on("child_added", snapshot => {
-            count++         
-        })
-        console.log(count)
-        return count
-    }
 
-
+    //Gère la barre de saisie du nombre d'années de date de péremption
     handleOnChangeYears = (years) => { 
-        years =  (''+years).toLowerCase().replace(/[^0-9]+/g, "" )
-        if(parseInt(years)>0){
-            years = parseInt(years)
-            
-        }
-        this.setState({
-            years : years,
-        })
+        years = Utils.JustNumberAndParse(years)
+        this.setState({years})
 
     }
 
+
+    //Gère la barre de saisie du nombre de mois de péremption 
     handleOnChangeMounths = (mounths) => { 
-        mounths =  (''+mounths).toLowerCase().replace(/[^0-9]+/g, "" )
-        if(parseInt(mounths)>0){
-            mounths = parseInt(mounths)
-            
-        }
-        this.setState({
-            mounths : mounths,
-        })
-        
-
-        
-
+        mounths = Utils.JustNumberAndParse(mounths)
+        this.setState({mounths})
+ 
     }
 
-
+    //Gère la barre de saisie du nombre de jours de péremption
     handleOnChangeDays = (days) => { 
-        days =  (''+days).toLowerCase().replace(/[^0-9]+/g, "" )
-        if(parseInt(days)>0){
-            days = parseInt(days)
-            
-        }
-        this.setState({
-            days : days,
-        })
+        days = Utils.JustNumberAndParse(days)
+        this.setState({days})
     }
 
+
+    //Gère la barre de saisie du nombre de d'unités de l'ingrédient en moyenne
     handleChangeUnit = (unit) =>{
-        unit = (''+unit).toLowerCase().replace(/[^0-9]+/g, "" )
-        this.setState({
-            valueUnit: unit
-        })
+        unit = Utils.JustNumberAndParse(unit)
+        this.setState({valueUnit: unit})
     }
-
+    
+    //Gère la barre de saisie du nombre de gramme de l'ingrédient en moyenne
     handleChangeGramme = (gramme) =>{
-        gramme = (''+gramme).toLowerCase().replace(/[^0-9]+/g, "" )
-        console.log("gramme1 " + gramme)
-        this.setState({
-            valueGramme: gramme
-        })
-        console.log("gramme2 " + this.state.valueGramme)
+        gramme = Utils.JustNumberAndParse(gramme)
+        this.setState({valueGramme: gramme})
     }
 
     
 
-    handleOnChangeIngredientName = async (textInInput) =>{
-        textInInput =  (''+textInInput).toLowerCase().replace(/[^a-zA-Z ]+/g, "" )
-        textInInput = (''+textInInput).charAt(0).toUpperCase()+(''+textInInput).substring(1)
-        this.setState({
-            textInInput : textInInput,
+    //Gère la barre de saisie du nom de l'ingrédient
+    handleOnChangeIngredientName =  (textInInput) =>{
+        textInInput =  Utils.JustAlphabetAndSpace(textInInput)
+        textInInput = Utils.FirstCaractUpperCase(textInInput)
+
+        this.setState({ textInInput }, ()=> {
+            if(new String(textInInput).length >=2){
+                this.setState({lenghtTextValid : true})
+                let count = 0
+                UtilsFirebase.getDatabaseIngredientRef().orderByChild("name").equalTo(textInInput).on("child_added", snapshot =>{
+                    count++
+                })
+                if(count > 0){
+                    this.setState({exist : true}, () => {
+                        console.log("coucou")
+                    })
+                }else{
+                    this.setState({exist : false})
+                }
+            }
         })
-        if((''+textInInput).length >=2)
-        {
-            this.setState({
-                lenghtTextValid : true,
-            })
-            if(await this.getIngredient(textInInput) > 0)
-            {
-                this.setState({
-                    exist : true,
-                })
-            }
-            else
-            {
-                this.setState({
-                    exist : false,
-                })
-            }
-        }
-        else
-        {
-            this.setState({
-                lenghtTextValid : false,
-            })
-        }
-       
-        
-     
-
     }
 
-    CheckIfDateIsUndefined = (number) =>{
-        if(number === undefined)
-        {
-            return 0
-        }
-        else
-        {
-            return number;
-        }
-    }
 
+
+
+
+    //Gère le push de l'ingrédient dans la base de données
     handleSubmit = async () =>{
-        if(this.getIngredient(this.state.textInInput) >0)
-        {
-            return;
-        }
-        const years = this.CheckIfDateIsUndefined(this.state.years);
-        const mounths =  this.CheckIfDateIsUndefined(this.state.mounths);
-        const days =  this.CheckIfDateIsUndefined(this.state.days);
-        let valueUnit = this.state.valueUnit;
-        let valueGram = this.state.valueGramme;
-        console.log("valueGram " + this.state.valueGramme)
-        if(this.state.valueUnit == undefined){
-            valueUnit = 0;
-        }
-        if(this.state.valueGramme == undefined){
-            valueGram = 0;
-        }       
-            
-            await firebase.database().ref("ingredients").push().set({
-            name : this.state.textInInput,
+        const name = this.state.textInInput;
+        const years = Utils.IfUndefinedTransformToZero(this.state.years);
+        const mounths =  Utils.IfUndefinedTransformToZero(this.state.mounths);
+        const days =  Utils.IfUndefinedTransformToZero(this.state.days);
+        const valueUnit =  Utils.IfUndefinedTransformToZero(this.state.valueUnit);
+        const valueGram = Utils.IfUndefinedTransformToZero(this.state.valueGramme);        
+        await UtilsFirebase.getDatabaseIngredientRef().push().set({
+            name : name,
             yearsExpiration : years,
             mounthsExpiration : mounths,
             daysExpiration : days,
             unitAverage : valueUnit,
-            gramAverage : valueGram,
+            gramAverage : valueGram
         })
-        const response = await fetch(this.state.image)
-        const blob = await response.blob();
-        console.log(blob.type)
-        console.log(blob.size)
-        let refStorage =  firebase.storage().ref();
-        let path = "ingredients/"+this.state.textInInput+"/"+this.state.textInInput+"Logo.jpg";
-        await refStorage.child(path).put(blob).then( console.log('sucess') )
-        .catch( (error) => console.log(error.messaeg) )
-        this.setState({
-            image : require('./uploadyourimage.png'),
-            textInInput : '',
-            canSubmit : false,
-            count : 0,
-            exist : false,
-            haveChooseImage : false,
-            lenghtTextValid : false,
-            years : '',
-            mounths : '',
-            days : '',
-            unit : true,
-            valueUnit : '',
-            valueGramme : '',
+        Utils.TransformImageInBlob(this.state.image).then(blob =>{
+            UtilsFirebase.PushIngredientImageInStorage(this.state.textInInput,blob).then(() =>{
+                this.setState({
+                    image : require('../uploadyourimage.png'),
+                    textInInput : '',
+                    canSubmit : false,
+                    count : 0,
+                    exist : false,
+                    haveChooseImage : false,
+                    lenghtTextValid : false,
+                    years : '',
+                    mounths : '',
+                    days : '',
+                    unit : true,
+                    valueUnit : '',
+                    valueGramme : '',
+                })
+            })
         })
-        return console.log("c'est fini ! ");
-        
-
+            
+       
     }
 
     handleChooseImage = async () => {
-        let permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-        permissionResult.granted = true;
-        if (permissionResult.granted === false) {
-            console.log("pas autorisé")
-        return;
+        pickerResult = await Utils.GetImagePicked()
+        if(pickerResult != undefined){
+            this.setState({
+                image : pickerResult.uri,
+                haveChooseImage : true,
+            })
+            return;
         }
-
-        let pickerResult = await ImagePicker.launchImageLibraryAsync();
-        if (pickerResult.cancelled === true) {
-            console.log("est revenu")
-        return;
-        }
-        this.setState({
-        image : pickerResult.uri,
-        haveChooseImage : true,
-        })
-        console.log("c'est bon")
-        return;
+        
     }
 
-    handleNotSubmit = () =>{
-        Alert.alert(
-            "Alert Title",
-            "My Alert Msg",
-            [
-              {
-                text: "Cancel",
-                onPress: () => console.log("Cancel Pressed"),
-                style: "cancel"
-              },
-              { text: "OK", onPress: () => console.log("OK Pressed") }
-            ],
-        )
-    }
 
 
     checkRadioButtonUnit = () => {
-        this.setState({
-            unit : true,
-        })
+        this.setState({unit : true})
     }
 
     checkRadioButtonGramme = () => {
-        this.setState({
-            unit : false,
-        })
+        this.setState({unit : false})
     }
 
 
@@ -333,26 +229,23 @@ export default class AddIngredient extends React.Component{
         }
         const nameIngredientZone = () =>
         {
-            if(this.state.lenghtTextValid)
+            if(new String(this.state.textInInput).length>0)
             {
-                if(!this.state.exist)
-                {
-                return(
-                    <View>
-                        <Text style = {styles.textStyle}>Nom de l'ingrédient</Text>
-                        <TextInput 
-                        style = {styles.textInputStyle}
-                        onChangeText = {text => this.handleOnChangeIngredientName(text)}
-                        value = {this.state.textInInput}
-                        placeholder = "ex: Tomate"
-                        />
-                        <Text style = {styles.textTrue}>Nom : OK</Text>
-                        
-                    </View>         
-                  )
-                }
-                else
-                {
+                if(!this.state.exist){
+                    return(
+                        <View>
+                            <Text style = {styles.textStyle}>Nom de l'ingrédient</Text>
+                            <TextInput 
+                            style = {styles.textInputStyle}
+                            onChangeText = {text => this.handleOnChangeIngredientName(text)}
+                            value = {this.state.textInInput}
+                            placeholder = "ex: Tomate"
+                            />
+                            <Text style = {styles.textTrue}>Nom : OK</Text>
+                            
+                        </View>         
+                    )
+                }else{
                     return(
                         <View>
                         <Text style = {styles.textStyle}>Nom de l'ingrédient</Text>
@@ -414,17 +307,20 @@ export default class AddIngredient extends React.Component{
 
         return(
             <View>
-                <View style = {styles.viewStyle}>
-                    <TouchableOpacity  onPress = {this.handleChooseImage}>
-                        {imageZone()}
-                    </TouchableOpacity>
+                <ScrollView>
+                    <View  style = {styles.viewStyle}>
+                        <TouchableOpacity  onPress = {this.handleChooseImage}>
+                            {imageZone()}
+                        </TouchableOpacity>
+                    
+                        {nameIngredientZone()}
+                        {dateExpirationZone()}
+                        {radioBoxZone()} 
+                        {buttonZone()}
+                    </View>
+                   
                 
-                    {nameIngredientZone()}
-                    {dateExpirationZone()}
-                    {radioBoxZone()} 
-                    {buttonZone()}
-                
-                </View>
+                </ScrollView>
                        
             </View>
             
@@ -443,7 +339,7 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     buttonSubmitStyle : {
-        fontFamily: "Glegoo_400Regular",
+        ...styles.glegoo,
         marginVertical : 50,
 
     },
@@ -451,33 +347,32 @@ const styles = StyleSheet.create({
         height : 40,
         borderColor : 'gray',
         borderWidth : 1,
-        color : 'black',
         paddingLeft : 25,
         marginHorizontal : 10,
         marginVertical : 10,
         borderRadius : 25,
-        fontFamily: "Glegoo_400Regular",
+        ...styles.glegooAndBlack,
     },
+
     textStyle : {
         marginTop : 20,
         fontSize : 15,
-        alignSelf : "center",
-        fontFamily: "Glegoo_400Regular"
+        ...styles.textGlegooAndAlignSelfCenter,
         
     },
-    textTrue : {
+
+    text : {
         marginVertical : 5,
         fontSize : 15,
-        alignSelf : "center",
-        fontFamily: "Glegoo_400Regular",
+        ...stylesText.textGlegooAndAlignSelfCenter,
+    },
+    textTrue : {
+        ...styles.text,
         color : "green",
     },
     textFalse : {
-        marginVertical : 5,
-        fontSize : 15,
+        ...styles.text,
         color : "red",
-        alignSelf : "center",
-        fontFamily: "Glegoo_400Regular"
     },
     touchableButtonTrueStyle : {
         backgroundColor: "green",
@@ -488,7 +383,7 @@ const styles = StyleSheet.create({
         marginTop : 10,
     },
     textButtonStyle : {
-        fontFamily : "Glegoo_400Regular",
+        ...stylesText.glegoo,
         marginHorizontal: 10,
         marginVertical : 5,
         color : "white"
